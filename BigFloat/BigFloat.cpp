@@ -74,7 +74,11 @@ BigFloat::BigFloat(const std::string& str)
 	is_float = false;
 	int i;
 	string s_str = str;
-
+	if (s_str.find('.')==string::npos)
+	{
+		s_str.push_back('.');
+		s_str.push_back('0');
+	}
 	if (s_str.front() == '-') // check if the number is negative
 	{
 		int m;

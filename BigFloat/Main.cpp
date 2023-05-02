@@ -6,14 +6,13 @@ int main()
 	try
 	{
 		//Finding pi
-		BigFloat circumference("100000"), diameter("31830.99"),pi;
-		set_precision(circumference, diameter,1000);
+		BigFloat circumference("1000000"), diameter("3183099"),pi;
+		set_precision(circumference, diameter,30);
 		
 		pi = circumference / diameter;
 		
 		cout << char(-29) << " " << char(-9) << " ";
 		cout << pi;
-		
 	}
 	catch (const char* c)
 	{
