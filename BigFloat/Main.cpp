@@ -7,7 +7,9 @@ int main()
 	{
 		//Finding pi
 		BigFloat circumference("1000000"), diameter("3183099"),pi;
-		set_precision(circumference, diameter,30);
+
+		// set prec
+		set_precision(circumference, diameter,2000);
 		
 		pi = circumference / diameter;
 		

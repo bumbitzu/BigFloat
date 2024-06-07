@@ -5,7 +5,7 @@
 class BigFloat
 {
 private:
-	std::vector<int> cifre;
+	std::vector<int> digits;
 	bool negativ;
 	bool is_float;
 	int float_point;

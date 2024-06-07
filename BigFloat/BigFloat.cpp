@@ -7,7 +7,7 @@ using namespace std;
 BigFloat::BigFloat()
 {
 	//Default constructor
-	cifre = std::vector<int>();
+	digits = std::vector<int>();
 	negativ = false;
 	is_float = false;
 	float_point = {};
@@ -44,8 +44,8 @@ BigFloat::BigFloat(long long n)
 	// If the input integer is zero
 	if (n == 0)
 	{
-		// Add 0 to the cifre vector and return
-		cifre.push_back(0);
+		// Add 0 to the digits vector and return
+		digits.push_back(0);
 		return;
 	}
 	
@@ -55,8 +55,8 @@ BigFloat::BigFloat(long long n)
 		// Divide integer by 10 until it becomes 0
 		while (n > 0)
 		{
-			// Add the remainder of the division by 10 to the cifre vector
-			cifre.push_back(n % 10);
+			// Add the remainder of the division by 10 to the digits vector
+			digits.push_back(n % 10);
 			
 			// Divide the integer by 10
 			n /= 10;
@@ -98,9 +98,9 @@ BigFloat::BigFloat(const std::string& str)
 			s_str.erase(s_str.begin() + i); // remove the decimal point from the string
 		}
 		m = stoi(s_str); // convert the remaining string to an integer
-		while (m > 0) // extract the digits of the integer and store them in cifre vector
+		while (m > 0) // extract the digits of the integer and store them in digits vector
 		{
-			cifre.push_back(m % 10);
+			digits.push_back(m % 10);
 			m /= 10;
 		}
 	}
@@ -119,15 +119,15 @@ BigFloat::BigFloat(const std::string& str)
 		{
 			s_str.erase(s_str.begin() + i); // remove the decimal point from the string
 		}
-		for (int i = s_str.size() - 1; i >= 0; i--) // extract the digits of the integer and store them in cifre vector
+		for (int i = s_str.size() - 1; i >= 0; i--) // extract the digits of the integer and store them in digits vector
 		{
 			if (isdigit(s_str[i]))
 			{
-				cifre.push_back(s_str[i] - '0');
+				digits.push_back(s_str[i] - '0');
 			}
 			else
 			{
-				throw("The string of cifre contains unaccepted characters"); // throw an exception if the string contains unaccepted characters
+				throw("The string of digits contains unaccepted characters"); // throw an exception if the string contains unaccepted characters
 			}
 		}
 		negativ = false;
@@ -146,7 +146,7 @@ BigFloat::BigFloat(const std::string& str)
 BigFloat::BigFloat(const BigFloat& ob)
 {
 	//copy constructor
-	cifre = ob.cifre;
+	digits = ob.digits;
 	negativ = ob.negativ;
 	is_float = ob.is_float;
 	float_point = ob.float_point;
@@ -158,7 +158,7 @@ BigFloat::BigFloat(const BigFloat& ob)
 bool E0(const BigFloat& ob)
 {
 	//checking if a given object has only one digit and that digit is 0.
-	return ob.cifre.size() == 1 && ob.cifre[0] == 0;
+	return ob.digits.size() == 1 && ob.digits[0] == 0;
 }
 
 // This function takes two vectors of integers and two BigFloat objects as input, and returns a BigFloat object.
@@ -226,15 +226,15 @@ BigFloat& BigFloat::operator=(const BigFloat& ob)
 		int sz = 1;
 
 		// Resize and copy the integer part of the number
-		for (int i = 0; i < ob.cifre.size(); i++)
+		for (int i = 0; i < ob.digits.size(); i++)
 		{
-			cifre.resize(sz++);
-			cifre[i] = ob.cifre[i];
+			digits.resize(sz++);
+			digits[i] = ob.digits[i];
 		}
 	}
 
 	// Copy the rest of the number's properties
-	cifre = ob.cifre;
+	digits = ob.digits;
 	negativ = ob.negativ;
 	is_float = ob.is_float;
 	float_point = ob.float_point;
@@ -252,14 +252,14 @@ std::istream& operator>>(std::istream& in, BigFloat& ob)
 	// Read the input from the input stream
 	in >> str;
 	// Clear the digits of the BigFloat object
-	ob.cifre.clear();
+	ob.digits.clear();
 	// Loop through the input string from right to left
 	for (int i = str.size() - 1; i >= 0; i--)
 	{
 		// If the current character is a digit, convert it to an integer and store it as a digit of the BigFloat object
 		if (isdigit(str[i]))
 		{
-			ob.cifre.push_back(str[i] - '0');
+			ob.digits.push_back(str[i] - '0');
 		}
 	}
 	// Return the input stream
@@ -274,15 +274,15 @@ ostream& operator<<(ostream& out, const BigFloat& ob)
 		out << '-';
 
 	// Loop through the digits of the BigFloat object from right to left
-	for (int i = ob.cifre.size() - 1; i >= 0; i--)
+	for (int i = ob.digits.size() - 1; i >= 0; i--)
 	{
 		// Output the current digit
-		out << ob.cifre[i];
+		out << ob.digits[i];
 
 		// If the BigFloat object represents a floating-point number and we have output the appropriate number of digits, output a decimal point
 		if (ob.is_float)
 		{
-			if (ob.float_point == ob.cifre.size() - i)
+			if (ob.float_point == ob.digits.size() - i)
 				out << '.';
 		}
 	}
@@ -294,8 +294,8 @@ ostream& operator<<(ostream& out, const BigFloat& ob)
 BigFloat operator+(const BigFloat& ob1, const BigFloat& ob2)
 {
 	// Extract the digits from the input BigFloats and create an empty vector for the result.
-	vector<int>V1 = ob1.cifre;
-	vector<int>V2 = ob2.cifre;
+	vector<int>V1 = ob1.digits;
+	vector<int>V2 = ob2.digits;
 	vector<int>aux;
 	BigFloat result = Balance_Point(V1,V2,ob1,ob2);
 	
@@ -309,7 +309,7 @@ BigFloat operator+(const BigFloat& ob1, const BigFloat& ob2)
 				transport += V1[i];
 			if (i < V2.size())
 				transport += V2[i];
-			result.cifre.push_back(transport % 10);
+			result.digits.push_back(transport % 10);
 			transport /= 10;
 		}
 	// If both input BigFloats are negative, add them normally and set the result to negative.
@@ -320,7 +320,7 @@ BigFloat operator+(const BigFloat& ob1, const BigFloat& ob2)
 				transport += V1[i];
 			if (i < V2.size())
 				transport += V2[i];
-			result.cifre.push_back(transport % 10);
+			result.digits.push_back(transport % 10);
 			transport /= 10;
 			result.negativ = true;
 		}
@@ -343,12 +343,12 @@ BigFloat operator+(const BigFloat& ob1, const BigFloat& ob2)
 			{
 				borrow = 0;
 			}
-			result.cifre.push_back(diff);
+			result.digits.push_back(diff);
 		}
 		// remove leading zeros
-		while (result.cifre.size() > 1 && result.cifre.back() == 0)
+		while (result.digits.size() > 1 && result.digits.back() == 0)
 		{
-			result.cifre.pop_back();
+			result.digits.pop_back();
 		}
 		// If ob1 is greater than ob2, the result is positive; otherwise, it is negative.
 		if (ob1 > ob2)
@@ -366,7 +366,7 @@ BigFloat operator+(const BigFloat& ob1, const BigFloat& ob2)
 					transport += V1[i];
 				if (i < V2.size())
 					transport += V2[i];
-				result.cifre.push_back(transport % 10);
+				result.digits.push_back(transport % 10);
 				transport /= 10;
 			}
 			result.negativ = true;
@@ -397,12 +397,12 @@ BigFloat operator+(const BigFloat& ob1, const BigFloat& ob2)
 				borrow = 0;
 			}
 			// Add the difference to the result vector
-			result.cifre.push_back(diff);
+			result.digits.push_back(diff);
 		}
 		// remove leading zeros
-		while (result.cifre.size() > 1 && result.cifre.back() == 0)
+		while (result.digits.size() > 1 && result.digits.back() == 0)
 		{
-			result.cifre.pop_back();
+			result.digits.pop_back();
 		}
 		// Set the sign of the result based on the sign of the larger number
 		if (ob1 > ob2)
@@ -421,7 +421,7 @@ BigFloat operator+(const BigFloat& ob1, const BigFloat& ob2)
 				if (i < V2.size())
 					transport += V2[i];
 				// Add the last digit of transport to the result vector
-				result.cifre.push_back(transport % 10);
+				result.digits.push_back(transport % 10);
 				// Remove the last digit of transport
 				transport /= 10;
 			}
@@ -442,8 +442,8 @@ BigFloat operator+=(BigFloat& ob1, const BigFloat& ob2)
 BigFloat operator-(const BigFloat& ob1, const BigFloat& ob2)
 {
 	// Store the digit vectors of both operands in V1 and V2.
-	vector<int>V1 = ob1.cifre;
-	vector<int>V2 = ob2.cifre;
+	vector<int>V1 = ob1.digits;
+	vector<int>V2 = ob2.digits;
 
 	// Define some variables for later use.
 	vector<int>aux;
@@ -485,12 +485,12 @@ BigFloat operator-(const BigFloat& ob1, const BigFloat& ob2)
 			{
 				borrow = 0;
 			}
-			result.cifre.push_back(diff);
+			result.digits.push_back(diff);
 		}
 		// remove leading zeros
-		while (result.cifre.size() > 1 && result.cifre.back() == 0)
+		while (result.digits.size() > 1 && result.digits.back() == 0)
 		{
-			result.cifre.pop_back();
+			result.digits.pop_back();
 		}
 	}
 
@@ -568,26 +568,26 @@ BigFloat operator*(const BigFloat& ob1, const BigFloat& ob2)
 	// Multiply each digit of ob1 by each digit of ob2 and add the products
 	// to the result object, taking care to carry over any remainders from 
 	// the previous multiplication
-	for (int i = 0; i < ob1.cifre.size(); i++)
+	for (int i = 0; i < ob1.digits.size(); i++)
 	{
 		int carry = 0;
 		BigFloat current(0);
-		for (int j = 0; j < ob2.cifre.size(); j++)
+		for (int j = 0; j < ob2.digits.size(); j++)
 		{
-			int product = ob1.cifre[i] * ob2.cifre[j] + carry;
-			current.cifre.push_back(product % 10);
+			int product = ob1.digits[i] * ob2.digits[j] + carry;
+			current.digits.push_back(product % 10);
 			carry = product / 10;
 		}
 		if (carry > 0)
 		{
-			current.cifre.push_back(carry);
+			current.digits.push_back(carry);
 		}
 		
 		// Insert zeros into the current result object to shift it to the left
 		// by i digits, since we are computing a partial product
 		for (int j = 0; j < i; j++)
 		{
-			current.cifre.insert(current.cifre.begin(), 0);
+			current.digits.insert(current.digits.begin(), 0);
 		}
 		// Add the current partial product to the overall result
 		result = result + current;
@@ -606,12 +606,12 @@ BigFloat operator*(const BigFloat& ob1, const BigFloat& ob2)
 	// Set the position of the decimal point in the result, if either operand is a float
 	if (ob1.is_float || ob2.is_float)
 	{
-		result.float_point = result.cifre.size() - (static_cast<unsigned long long>(ob1.float_endpoint) + ob2.float_endpoint) - 1;
+		result.float_point = result.digits.size() - (static_cast<unsigned long long>(ob1.float_endpoint) + ob2.float_endpoint) - 1;
 		result.is_float = true;
 	}
 
 	// Remove any leading zeros from the result and return it
-	result.cifre.erase(result.cifre.begin());
+	result.digits.erase(result.digits.begin());
 	return result;
 }
 BigFloat operator*=(BigFloat& ob1, const BigFloat& ob2)
@@ -643,10 +643,10 @@ BigFloat operator/(const BigFloat& ob1, const BigFloat& ob2)
 	{
 		// Shift the digits of the dividend to the left to align the decimal points
 		for (int i = 0; i < ob2.float_endpoint; i++)
-			_ob1.cifre.insert(_ob1.cifre.begin(), 0);
+			_ob1.digits.insert(_ob1.digits.begin(), 0);
 	}
 	// Set the initial value of the dividend to the last digit of the dividend
-	divident.cifre.push_back(_ob1.cifre.back());
+	divident.digits.push_back(_ob1.digits.back());
 	// Create a copy of the divisor to modify
 	BigFloat divisor = ob2;
 	// Initialize a counter for the number of digits in the result after the decimal point
@@ -656,10 +656,10 @@ BigFloat operator/(const BigFloat& ob1, const BigFloat& ob2)
 	{
 		// Shift the digits of the divisor to the left to align the decimal points
 		for (int i = 0; i < ob1.float_endpoint; i++)
-			divisor.cifre.insert(divisor.cifre.begin(), 0);
+			divisor.digits.insert(divisor.digits.begin(), 0);
 	}
 	// Initialize an index for iterating over the digits of the dividend from right to left
-	int k = _ob1.cifre.size() - 1;
+	int k = _ob1.digits.size() - 1;
 	while(1) // Loop indefinitely until the division is complete
 	{
 		bool flag_point = false; // Flag to indicate if the decimal point has been reached
@@ -675,7 +675,7 @@ BigFloat operator/(const BigFloat& ob1, const BigFloat& ob2)
 					// Decrement the index to move to the next digit
 					k--;
 					// Add the next digit to the left of the dividend
-					divident.cifre.insert(divident.cifre.begin(), _ob1.cifre[k]);
+					divident.digits.insert(divident.digits.begin(), _ob1.digits[k]);
 					if (!k) // If the first digit of the dividend has been reached
 					{
 						// Set the flag to indicate that the decimal point has been reached
@@ -683,17 +683,17 @@ BigFloat operator/(const BigFloat& ob1, const BigFloat& ob2)
 					}
 
 					// If the last digit of the dividend is 0
-					if (divident.cifre.size() > 1 && divident.cifre[divident.cifre.size() - 1] == 0)
+					if (divident.digits.size() > 1 && divident.digits[divident.digits.size() - 1] == 0)
 					{
-						divident.cifre.pop_back(); // Remove the trailing 0
+						divident.digits.pop_back(); // Remove the trailing 0
 						break; // Exit the loop
 					}
 				}
 				else // If all the digits of the dividend have been processed
 				{
-					divident.cifre.insert(divident.cifre.begin(), 0);
-					if (divident.cifre.size() > 1 && divident.cifre[divident.cifre.size() - 1] == 0)
-						divident.cifre.pop_back(); // Remove the trailing 0
+					divident.digits.insert(divident.digits.begin(), 0);
+					if (divident.digits.size() > 1 && divident.digits[divident.digits.size() - 1] == 0)
+						divident.digits.pop_back(); // Remove the trailing 0
 					break; // Exit the loop
 				}
 			}
@@ -716,9 +716,9 @@ BigFloat operator/(const BigFloat& ob1, const BigFloat& ob2)
 			divident = divident - prod;
 		}
 		//computing the result
-		for (int i = cat.cifre.size() - 1; i >= 0; i--)
+		for (int i = cat.digits.size() - 1; i >= 0; i--)
 		{
-			result.cifre.insert(result.cifre.begin(), cat.cifre[i]);
+			result.digits.insert(result.digits.begin(), cat.digits[i]);
 		}
 
 		//checks whether the result has a floating point
@@ -727,7 +727,7 @@ BigFloat operator/(const BigFloat& ob1, const BigFloat& ob2)
 		if (flag_point)
 		{
 			result.is_float = true;
-			result.float_point = result.cifre.size();
+			result.float_point = result.digits.size();
 			if (ob1.is_float)
 				result.float_point ;
 			if(ob2.is_float)
@@ -754,9 +754,9 @@ BigFloat operator/(const BigFloat& ob1, const BigFloat& ob2)
 	// a zero digit is appended to the result
 	if (_ob1 < ob2)
 	{
-		result.cifre.push_back(0);
+		result.digits.push_back(0);
 		result.is_float = true;
-		result.float_point = result.cifre.back()+1;
+		result.float_point = result.digits.back()+1;
 	}
 	
 	return result;
@@ -788,14 +788,14 @@ BigFloat operator%(const BigFloat& ob1, const BigFloat& ob2)
 	if (ob2.is_float)
 	{
 		for (int i = 0; i < ob2.float_point; i++)
-			_ob1.cifre.insert(_ob1.cifre.begin(), 0);
+			_ob1.digits.insert(_ob1.digits.begin(), 0);
 	}
 	
 	result.negativ = (ob1.negativ != ob2.negativ);
 	BigFloat divident;
-	divident.cifre.push_back(_ob1.cifre.back());
+	divident.digits.push_back(_ob1.digits.back());
 	BigFloat divisor = ob2;
-	int k = _ob1.cifre.size() - 1;
+	int k = _ob1.digits.size() - 1;
 	while (1)
 	{
 		BigFloat cat = 0;
@@ -805,7 +805,7 @@ BigFloat operator%(const BigFloat& ob1, const BigFloat& ob2)
 			while (divident <= divisor)
 			{
 				k--;
-				divident.cifre.insert(divident.cifre.begin(), _ob1.cifre[k]);
+				divident.digits.insert(divident.digits.begin(), _ob1.digits[k]);
 			}
 			produs += divisor;
 			cat++;
@@ -819,9 +819,9 @@ BigFloat operator%(const BigFloat& ob1, const BigFloat& ob2)
 	}
 	result = divident;
 	//// Remove leading zeros from the result
-	/*while (result.cifre.size() > 0 && result.cifre.back() == 0)
+	/*while (result.digits.size() > 0 && result.digits.back() == 0)
 	{
-		result.cifre.pop_back();
+		result.digits.pop_back();
 	}*/
 	return result;
 }
@@ -870,10 +870,10 @@ bool operator==(const BigFloat& ob1, const BigFloat& ob2)
 {
 	// If any two digits are not equal, then the loop terminates and the function returns false. 
 	int i;
-	if (ob1.cifre.size() != ob2.cifre.size())
+	if (ob1.digits.size() != ob2.digits.size())
 		return false;
-	for (i = 0; i < ob1.cifre.size() && ob1.cifre[i] == ob2.cifre[i]; i++);
-	return i == ob1.cifre.size();
+	for (i = 0; i < ob1.digits.size() && ob1.digits[i] == ob2.digits[i]; i++);
+	return i == ob1.digits.size();
 }
 
 bool operator!=(const BigFloat& ob1, const BigFloat& ob2)
@@ -887,19 +887,19 @@ bool operator<(const BigFloat& ob1, const BigFloat& ob2)
 	// Check the number of digits in the two objects
 	// If ob1 has fewer digits than ob2, then ob1 is smaller
 	int i = 0;
-	if (ob1.cifre.size() < ob2.cifre.size())
+	if (ob1.digits.size() < ob2.digits.size())
 		return true;
 	// If ob1 has more digits than ob2, then ob1 is larger
-	if (ob1.cifre.size() > ob2.cifre.size())
+	if (ob1.digits.size() > ob2.digits.size())
 		return false;
 	// If both objects have the same number of digits, then compare them digit by digit
 	// Start with the most significant digit and work towards the least significant
-	for (i = ob1.cifre.size() - 1; i >= 0 && ob1.cifre[i] == ob2.cifre[i]; i--);
+	for (i = ob1.digits.size() - 1; i >= 0 && ob1.digits[i] == ob2.digits[i]; i--);
 	// If all digits are equal, then the objects are not less than each other
 	if (i == -1)
 		return false;
 	// If the i-th digit of ob1 is less than the i-th digit of ob2, then ob1 is smaller
-	if (ob1.cifre[i] < ob2.cifre[i])
+	if (ob1.digits[i] < ob2.digits[i])
 		return true;
 	// Otherwise, ob1 is not less than ob2
 	return false;
@@ -931,6 +931,6 @@ int BigFloat::operator[](const int poz) const
 
 	if (poz < 0)
 		throw("Range Error");
-	return cifre[poz];
+	return digits[poz];
 }
 
