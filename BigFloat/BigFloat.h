@@ -25,6 +25,7 @@ private:
 
     // Helper functions
     void trim();
+    void scaleByDecimals(int dec);
     static int compareAbs(const BigFloat& a, const BigFloat& b); 
     static void divide_by_int(BigFloat& a, int b); 
 

@@ -46,6 +46,7 @@ void test_addition() {
     assert_equals(BigFloat("100") + BigFloat("-50"), "50", "100 + (-50)");
     assert_equals(BigFloat("-50") + BigFloat("-50"), "-100", "-50 + (-50)");
     assert_equals(BigFloat("0.001") + BigFloat("0.002"), "0.003", "Small decimals");
+    assert_equals(BigFloat("1") + BigFloat("0.001"), "1.001", "Adding small decimal to integer");
 }
 
 void test_subtraction() {
@@ -54,6 +55,7 @@ void test_subtraction() {
     assert_equals(BigFloat("50") - BigFloat("100"), "-50", "50 - 100 (Result Negative)");
     assert_equals(BigFloat("10.5") - BigFloat("0.5"), "10", "10.5 - 0.5");
     assert_equals(BigFloat("10") - BigFloat("-5"), "15", "10 - (-5) -> Addition");
+    assert_equals(BigFloat("1") - BigFloat("0.001"), "0.999", "1 - 0.001 (Decimal logic)");
 }
 
 void test_multiplication() {

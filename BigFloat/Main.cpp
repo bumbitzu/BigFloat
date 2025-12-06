@@ -1,7 +1,9 @@
 #include "Benchmark.h"
 #include "Test.h"
 #include <iostream>
+#include <chrono>
 using namespace std;
+using namespace std::chrono;
 
 
 int main()
@@ -44,6 +46,21 @@ int main()
 	catch (const std::exception& e) {
 		cout << "Error: " << e.what() << endl;
 	}
-	
-	
+
+	// find pi
+    //int precision = 100000; // Set desired precision
+    //BigFloat num("355");
+    //BigFloat den("113");
+    //set_precision(num, den, precision);
+
+    //high_resolution_clock::time_point start = high_resolution_clock::now();
+    //BigFloat pi = num / den;
+    //high_resolution_clock::time_point end = high_resolution_clock::now();
+
+    //cout << "PI Approximation (355/113) with precision " << precision << ":\n";
+    //cout << pi << endl;
+
+    //auto duration = duration_cast<milliseconds>(end - start);
+    //cout << "Calculation took " << duration.count() << " ms\n";
+
 }

@@ -1,4 +1,4 @@
-#include "BigFloat.h"
+﻿#include "BigFloat.h"
 #include <sstream>
 #include <algorithm>
 #include <stdexcept>
@@ -77,6 +77,34 @@ void BigFloat::trim() {
         exponent = 0;
     }
 }
+void BigFloat::scaleByDecimals(int dec) { // dec >= 0
+    if (dec == 0 || (digits.size() == 1 && digits[0] == 0)) return;
+
+    int chunk_shift = dec / BASE_DIGITS;
+    int digit_shift = dec % BASE_DIGITS;
+
+    // 1) shift pe chunk-uri (multiplicare cu BASE^chunk_shift)
+    if (chunk_shift > 0) {
+        digits.insert(digits.begin(), chunk_shift, 0);
+    }
+
+    // 2) shift pe zecimale (multiplicare cu 10^digit_shift)
+    static const int POW10[9] = { 1,10,100,1000,10000,100000,1000000,10000000,100000000 };
+
+    if (digit_shift > 0) {
+        long long mul = POW10[digit_shift];
+        long long carry = 0;
+        for (size_t i = 0; i < digits.size(); ++i) {
+            long long val = digits[i] * mul + carry;
+            digits[i] = (int)(val % BASE);
+            carry = val / BASE;
+        }
+        while (carry) {
+            digits.push_back((int)(carry % BASE));
+            carry /= BASE;
+        }
+    }
+}
 // --- Precision Management ---
 void BigFloat::setPrecision(int p) {
     precision_limit = p;
@@ -88,84 +116,252 @@ void set_precision(BigFloat& ob1, BigFloat& ob2, const int& n) {
     ob2.setPrecision(n);
 }
 // Compare absolute values of two BigFloat numbers
-int BigFloat::compareAbs(const BigFloat& a, const BigFloat& b) 
+int BigFloat::compareAbs(const BigFloat& a, const BigFloat& b)
 {
+    if (a.exponent == b.exponent) {
+        if (a.digits.size() > b.digits.size()) return 1;
+        if (a.digits.size() < b.digits.size()) return -1;
+        for (int i = (int)a.digits.size() - 1; i >= 0; --i) {
+            if (a.digits[i] > b.digits[i]) return 1;
+            if (a.digits[i] < b.digits[i]) return -1;
+        }
+        return 0;
+    }
+    // 0 vs 0
+    if (a.digits.size() == 1 && a.digits[0] == 0 &&
+        b.digits.size() == 1 && b.digits[0] == 0) {
+        return 0;
+    }
 
-    if (a.digits.size() > b.digits.size()) return 1;
-    if (a.digits.size() < b.digits.size()) return -1;
-    for (int i = a.digits.size() - 1; i >= 0; i--) {
-        if (a.digits[i] > b.digits[i]) return 1;
-        if (a.digits[i] < b.digits[i]) return -1;
+    // Compare by "magnitude" first
+    auto magnitude = [](const BigFloat& x) -> long long {
+        if (x.digits.size() == 1 && x.digits[0] == 0) return LLONG_MIN; 
+
+        // Calculate number of digits in absolute value
+        int ms = x.digits.back(); 
+        int ms_digits = 0;
+        while (ms > 0) {
+            ms_digits++;
+            ms /= 10;
+        }
+        if (ms_digits == 0) ms_digits = 1; 
+
+        
+        long long digits_count = (long long)(x.digits.size() - 1) * BASE_DIGITS + ms_digits;
+        return digits_count + x.exponent; 
+        };
+
+    // Get magnitudes
+    long long magA = magnitude(a);
+    long long magB = magnitude(b);
+
+    if (magA > magB) return 1;
+    if (magA < magB) return -1;
+
+    // Slow-path: align exponents and compare digit by digit
+    BigFloat A = a;
+    BigFloat B = b;
+
+    int common_exp = std::min(A.exponent, B.exponent);
+
+    if (A.exponent > common_exp) {
+        A.scaleByDecimals(A.exponent - common_exp);
+        A.exponent = common_exp;
+    }
+    if (B.exponent > common_exp) {
+        B.scaleByDecimals(B.exponent - common_exp);
+        B.exponent = common_exp;
+    }
+
+    // Now compare digit by digit
+    A.trim();
+    B.trim();
+
+    if (A.digits.size() > B.digits.size()) return 1;
+    if (A.digits.size() < B.digits.size()) return -1;
+
+    for (int i = (int)A.digits.size() - 1; i >= 0; --i) {
+        if (A.digits[i] > B.digits[i]) return 1;
+        if (A.digits[i] < B.digits[i]) return -1;
     }
     return 0;
 }
 
+
 // --- Arithmetic Operators ---
 // Addition
 BigFloat BigFloat::operator+(const BigFloat& other) const {
-    if (is_negative == other.is_negative) {
 
+    // Case: different signs => reduce to subtraction
+    if (is_negative != other.is_negative) {
+        BigFloat a = *this;
+        BigFloat b = other;
+        if (a.is_negative) {
+            a.is_negative = false;
+            return b - a;         
+        }
+        else {
+            b.is_negative = false;
+            return a - b;         
+        }
+    }
+
+    // From here: both have the same sign
+    if (exponent == other.exponent) {
         BigFloat res;
         res.is_negative = is_negative;
-        res.exponent = std::min(exponent, other.exponent);
+        res.exponent = exponent;
         res.precision_limit = std::max(precision_limit, other.precision_limit);
 
-        int exp_diff = abs(exponent - other.exponent);
+        const auto& v1 = digits;
+        const auto& v2 = other.digits;
 
-        std::vector<int> v1 = digits;
-        std::vector<int> v2 = other.digits;
-
-        int carry = 0;
         size_t n1 = v1.size(), n2 = v2.size();
         size_t maxSize = std::max(n1, n2);
 
+        res.digits.reserve(maxSize + 1);
+
+        long long carry = 0;
         for (size_t i = 0; i < maxSize || carry; ++i) {
-            long long sum = carry + (i < n1 ? v1[i] : 0) + (i < n2 ? v2[i] : 0);
-            if (i < res.digits.size()) res.digits[i] = sum % BASE;
-            else res.digits.push_back(sum % BASE);
+            long long sum = carry;
+            if (i < n1) sum += v1[i];
+            if (i < n2) sum += v2[i];
+
+            res.digits.push_back((int)(sum % BASE));
             carry = sum / BASE;
         }
+
+        res.trim();
         return res;
     }
-    else {
 
-        BigFloat a = *this; a.is_negative = false;
-        BigFloat b = other; b.is_negative = false;
-        if (a > b) {
-            BigFloat res = a - b;
-            res.is_negative = is_negative; 
-            return res;
-        }
-        else {
-            BigFloat res = b - a;
-            res.is_negative = other.is_negative;
-            return res;
-        }
-    }
-}
-// Subtraction
-BigFloat BigFloat::operator-(const BigFloat& other) const {
-    if (is_negative != other.is_negative) {
-
-        BigFloat b = other;
-        b.is_negative = !b.is_negative;
-        return *this + b;
-    }
-
-    if (compareAbs(*this, other) < 0) 
-    {
-        BigFloat res = other - *this;
-        res.is_negative = !is_negative;
-        return res;
-    }
+    // Slow-path
+    BigFloat a = *this;
+    BigFloat b = other;
 
     BigFloat res;
     res.is_negative = is_negative;
-    res.exponent = exponent; 
+    res.precision_limit = std::max(precision_limit, other.precision_limit);
 
-    int borrow = 0;
-    for (size_t i = 0; i < digits.size(); ++i) {
-        long long sub = digits[i] - borrow - (i < other.digits.size() ? other.digits[i] : 0);
+    int common_exp = std::min(a.exponent, b.exponent);
+
+    // Align a and b to common_exp
+    if (a.exponent > common_exp) {
+        a.scaleByDecimals(a.exponent - common_exp); 
+        a.exponent = common_exp;
+    }
+
+    if (b.exponent > common_exp) {
+        b.scaleByDecimals(b.exponent - common_exp);
+        b.exponent = common_exp;
+    }
+
+    res.exponent = common_exp;
+
+    // Now perform addition
+    size_t n1 = a.digits.size();
+    size_t n2 = b.digits.size();
+    size_t maxSize = std::max(n1, n2);
+
+    res.digits.reserve(maxSize + 1);
+
+    long long carry = 0;
+    for (size_t i = 0; i < maxSize || carry; ++i) {
+        long long sum = carry;
+        if (i < n1) sum += a.digits[i];
+        if (i < n2) sum += b.digits[i];
+
+        res.digits.push_back((int)(sum % BASE));
+        carry = sum / BASE;
+    }
+
+    res.trim();
+    return res;
+}
+
+// Subtraction
+BigFloat BigFloat::operator-(const BigFloat& other) const {
+
+    // Case: different signs => reduce to addition
+    if (is_negative != other.is_negative) {
+        BigFloat a = *this;
+        BigFloat b = other;
+        
+        if (b.is_negative) {
+
+            b.is_negative = false;
+            return a + b;
+        }
+        else {
+
+            a.is_negative = false;
+            BigFloat res = a + b;  
+            res.is_negative = true;  
+            res.trim();              
+            return res;
+        }
+    }
+    // From here: both have the same sign
+    BigFloat a = *this;
+    BigFloat b = other;
+
+    // Fast-path: equal exponents => BigInt - BigInt
+    BigFloat res;
+    res.precision_limit = std::max(precision_limit, other.precision_limit);
+
+    int common_exp = std::min(a.exponent, b.exponent);
+
+    // Align a to common_exp
+    if (a.exponent > common_exp) {
+        a.scaleByDecimals(a.exponent - common_exp);
+        a.exponent = common_exp;
+    }
+    if (b.exponent > common_exp) {
+        b.scaleByDecimals(b.exponent - common_exp);
+        b.exponent = common_exp;
+    }
+
+    res.exponent = common_exp;
+
+    // Determine which absolute value is greater
+    a.trim();
+    b.trim();
+
+    bool a_ge_b;  
+
+    // Compare absolute values
+    if (a.digits.size() != b.digits.size()) {
+        a_ge_b = (a.digits.size() > b.digits.size());
+    }
+    else {
+        int i = (int)a.digits.size() - 1;
+        for (; i >= 0 && a.digits[i] == b.digits[i]; --i) {}
+        if (i < 0) {
+
+            a_ge_b = true;
+        }
+        else {
+            a_ge_b = (a.digits[i] > b.digits[i]);
+        }
+    }
+
+    const std::vector<int>& v_big = a_ge_b ? a.digits : b.digits;
+    const std::vector<int>& v_small = a_ge_b ? b.digits : a.digits;
+
+    if (a_ge_b) {
+        res.is_negative = is_negative;
+    }
+    else {
+        res.is_negative = !is_negative;
+    }
+
+
+    res.digits.clear();
+    res.digits.reserve(v_big.size());
+
+    long long borrow = 0;
+    for (size_t i = 0; i < v_big.size(); ++i) {
+        long long sub = (long long)v_big[i] - borrow - (i < v_small.size() ? v_small[i] : 0);
         if (sub < 0) {
             sub += BASE;
             borrow = 1;
@@ -173,19 +369,24 @@ BigFloat BigFloat::operator-(const BigFloat& other) const {
         else {
             borrow = 0;
         }
-        res.digits.push_back(sub);
+        res.digits.push_back((int)sub);
     }
-    res.trim();
+
+    res.trim(); 
     return res;
 }
+
+
 // Multiplication
 BigFloat BigFloat::operator*(const BigFloat& other) const {
     BigFloat res;
     res.is_negative = (is_negative != other.is_negative);
     res.exponent = exponent + other.exponent;
     res.precision_limit = std::max(precision_limit, other.precision_limit);
+
     // Initialize result digits
     res.digits.resize(digits.size() + other.digits.size(), 0);
+
     // Multiply
     for (size_t i = 0; i < digits.size(); ++i) {
         long long carry = 0;
